@@ -32,9 +32,9 @@ import javafx.scene.Node;
 /**
  * @author Marco Ruiz
  */
-public class JFXSafeSubscriptionTemplate<SUB_T> extends SafeSubscriptionTemplate<SUB_T> {
+public class JFXSafeSubscriptionTemplate extends SafeSubscriptionTemplate {
 	
-	public JFXSafeSubscriptionTemplate(SUB_T subscriber) {
+	public JFXSafeSubscriptionTemplate(Object subscriber) {
 		super(subscriber);
 	}
 	

@@ -23,25 +23,36 @@ import java.lang.reflect.Proxy;
 /**
  * @author Marco Ruiz
  */
-public class ProxyWithWeakReferences<OBJ_T> implements InvocationHandler {
-	
+public class WeakRefsInvocationHandler<OBJ_T> implements InvocationHandler {
+
+	private static Method equalsMethod = null;
+
+	static {
+		try {
+			equalsMethod = Object.class.getMethod("equals", new Class[] {Object.class});
+		} catch (NoSuchMethodException | SecurityException e) {
+			// Impossible: Object has "equals" method defined!
+			e.printStackTrace();
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	public static <OBJ_T> OBJ_T create(OBJ_T target, Class<? super OBJ_T> clazz, Object... refsToWeaken) {
-		ProxyWithWeakReferences<OBJ_T> handler = new ProxyWithWeakReferences<OBJ_T>(target, refsToWeaken);
+		WeakRefsInvocationHandler<OBJ_T> handler = new WeakRefsInvocationHandler<OBJ_T>(target, refsToWeaken);
 		return (OBJ_T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class[] { clazz }, handler);		
 	}
 
 	@SuppressWarnings("unchecked")
 	public static <OBJ_T> OBJ_T create(OBJ_T target, Object... refsToWeaken) {
 		Class<? extends Object> targetClazz = target.getClass();
-		ProxyWithWeakReferences<OBJ_T> handler = new ProxyWithWeakReferences<OBJ_T>(target, refsToWeaken);
+		WeakRefsInvocationHandler<OBJ_T> handler = new WeakRefsInvocationHandler<OBJ_T>(target, refsToWeaken);
 		return (OBJ_T) Proxy.newProxyInstance(targetClazz.getClassLoader(), targetClazz.getInterfaces(), handler);		
 	}
 	
     private OBJ_T target;
     private WeakFields weakFields;
 	
-	private ProxyWithWeakReferences(OBJ_T target, Object... referencesToWeaken) {
+	private WeakRefsInvocationHandler(OBJ_T target, Object... referencesToWeaken) {
         this.target = target;
         this.weakFields = new WeakFields(target, referencesToWeaken);
         this.weakFields.clearWeakFields();
@@ -54,7 +65,7 @@ public class ProxyWithWeakReferences<OBJ_T> implements InvocationHandler {
     	Object result = null;
     	weakFields.resetWeakFields();
         try {
-			result = method.invoke(target, args);
+        	result = (method.equals(equalsMethod)) ? equalProxied(args[0]) : method.invoke(target, args);
 		} catch (Exception e) {
 			throw e;
 		} finally {
@@ -62,6 +73,16 @@ public class ProxyWithWeakReferences<OBJ_T> implements InvocationHandler {
 		}
         
         return result;
+    }
+    
+    private boolean equalProxied(Object other) {
+    	if (!Proxy.isProxyClass(other.getClass())) 
+    		return target.equals(other);
+    	
+    	InvocationHandler otherInvocationHandler = Proxy.getInvocationHandler(other);
+    	
+    	return (!(otherInvocationHandler instanceof WeakRefsInvocationHandler)) ? 
+    			false : target.equals(((WeakRefsInvocationHandler<?>)otherInvocationHandler).target);
     }
 }
 

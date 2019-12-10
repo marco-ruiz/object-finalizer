@@ -24,63 +24,68 @@ import org.junit.Test;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
 
 /**
  * @author Marco Ruiz
  */
-public class JFXSafeSubscriptionTemplateTest implements JFXSafeSubscriber<JFXSafeSubscriptionTemplateTest> {
+public class JFXSafeSubscriptionTemplateTest {//implements JFXSafeSubscriber {
 
-	private static void sleep(boolean gc) {
+	private static void gc(boolean gc) {
 		if (gc) System.gc();
 		try {
 			Thread.sleep(100);
 		} catch (InterruptedException e) {}
 	}
 	
-	private String initialValue = "World ";
+	private String initialValue = "Hello ";
 	
 	private StringProperty publisher;
-	private StringProperty receiver;
-	private TestSubscriber subscriber;
+	private StringProperty observerProperty;
+	private ChangeListener<? super String> listener;
+	private JFXSafeSubscriber subscriber;
 
 	@Before
 	public void before() {
+		subscriber = new JFXSafeSubscriber() {};
 		publisher = new SimpleStringProperty(initialValue);
-		receiver = new SimpleStringProperty(initialValue);
-		subscriber = new TestSubscriber();
-		subscriber.subscribe(publisher, receiver);
+		observerProperty = new SimpleStringProperty(initialValue);
+		listener = (ov, oldVal, newVal) -> observerProperty.set(newVal);
+		
+		subscriber.addListenerSafely(publisher, listener);
+		
 		assertEquals(initialValue, publisher.get());
-		assertEquals(initialValue, receiver.get());
+		assertEquals(initialValue, observerProperty.get());
 
-		initialValue += "Hello";
+		initialValue += "World";
 		publisher.set(initialValue);
-		assertEquals(initialValue, receiver.get());
+		assertEquals(initialValue, observerProperty.get());
 	}
 	
 	@After
 	public void after() {
 		publisher = null;
-		receiver = null;
+		observerProperty = null;
 		subscriber = null;
-		sleep(true);
+		gc(true);
 	}
 	
 	@Test
 	public void whenPublisherSet_thenReceiverSet() {
 		String value = initialValue + " Again";
 		
-		sleep(false);
+		gc(false);
 		publisher.set(value);
-		assertEquals(value, receiver.get());
+		assertEquals(value, observerProperty.get());
 	}
 	
 	@Test
 	public void whenGC_thenStillReceiverSet() {
 		String value = initialValue + " Again";
 		
-		sleep(true);
+		gc(true);
 		publisher.set(value);
-		assertEquals(value, receiver.get());
+		assertEquals(value, observerProperty.get());
 	}
 	
 	@Test
@@ -88,9 +93,9 @@ public class JFXSafeSubscriptionTemplateTest implements JFXSafeSubscriber<JFXSaf
 		String value = initialValue + " Again";
 
 		subscriber = null;
-		sleep(true);
+		gc(true);
 		publisher.set(value);
-		assertEquals(initialValue, receiver.get());
+		assertEquals(initialValue, observerProperty.get());
 	}
 	
 	@Test
@@ -98,7 +103,8 @@ public class JFXSafeSubscriptionTemplateTest implements JFXSafeSubscriber<JFXSaf
 		String value = initialValue + " Again";
 		
 		subscriber.removeObservers();
+//		gc(true);
 		publisher.set(value);
-		assertEquals(initialValue, receiver.get());
+		assertEquals(initialValue, observerProperty.get());
 	}
 }

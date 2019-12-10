@@ -16,11 +16,10 @@
 
 package com.bop.common.finalizer.jfx;
 
-import com.bop.common.finalizer.ProxyWithWeakReferences;
+import com.bop.common.finalizer.WeakRefsInvocationHandler;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-
 
 /**
  * @author Marco Ruiz
@@ -31,12 +30,9 @@ public class CheckMembersTester {
 		return null;
 	}
 	
-	
 	public static void main(String[] args) {
 		new CheckMembersTester().test();
-		
 	}
-
 
 	private void test() {
 //		ChangeListener<String> listener = (ov, oldVal, newVal) -> this.print(newVal);
@@ -45,14 +41,13 @@ public class CheckMembersTester {
 		
 //		ChangeListener<String> proxy = WeakReferencingProxy.create(listener, ChangeListener.class, this);
 		tryChanged(listener);
-		ChangeListener<String> proxy = ProxyWithWeakReferences.create(listener, this);
+		ChangeListener<String> proxy = WeakRefsInvocationHandler.create(listener, this);
 		tryChanged(listener);
 		
 		ChangeListener<String> listener2 = (ov, oldVal, newVal) -> getThis().print(newVal);
 		tryChanged(proxy);
 		tryChanged(listener);
 	}
-
 
 	private void tryChanged(ChangeListener<String> listener) {
 		try {

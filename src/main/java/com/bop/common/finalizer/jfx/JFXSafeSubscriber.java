@@ -31,9 +31,9 @@ import javafx.scene.Node;
 /**
  * @author Marco Ruiz
  */
-public interface JFXSafeSubscriber<SUB_T> {
+public interface JFXSafeSubscriber {
 
-	static final Map<Object, JFXSafeSubscriptionTemplate<?>> jfxSubscriberTemplates = new WeakHashMap<>();
+	static final Map<Object, JFXSafeSubscriptionTemplate> jfxSubscriberTemplates = new WeakHashMap<>();
 	
 	default <EV_T extends Event> void addEventHandlerSafely(Node publisher, EventType<EV_T> eventType, EventHandler<? super EV_T> observer) {
 		getJFXSafeSubscriptionTemplate().addEventHandlerSafely(publisher, eventType, observer);
@@ -51,9 +51,7 @@ public interface JFXSafeSubscriber<SUB_T> {
 		getJFXSafeSubscriptionTemplate().removeObservers();
 	}
 
-	@SuppressWarnings("unchecked")
-	default JFXSafeSubscriptionTemplate<SUB_T> getJFXSafeSubscriptionTemplate() {
-		return (JFXSafeSubscriptionTemplate<SUB_T>) 
-				jfxSubscriberTemplates.computeIfAbsent(this, JFXSafeSubscriptionTemplate::new);
+	default JFXSafeSubscriptionTemplate getJFXSafeSubscriptionTemplate() {
+		return (JFXSafeSubscriptionTemplate) jfxSubscriberTemplates.computeIfAbsent(this, JFXSafeSubscriptionTemplate::new);
 	}
 }

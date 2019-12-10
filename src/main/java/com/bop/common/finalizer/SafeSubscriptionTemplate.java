@@ -26,19 +26,19 @@ import java.util.function.BiFunction;
 /**
  * @author Marco Ruiz
  */
-public class SafeSubscriptionTemplate<SUB_T> {
+public class SafeSubscriptionTemplate {
 	
-	private final WeakReference<SUB_T> weakSubscriber;
+	private final WeakReference<Object> weakSubscriber;
 	private final Set<WeakReferenceFinalizable> finalizables = Collections.newSetFromMap(new WeakHashMap<WeakReferenceFinalizable, Boolean>());
 	
-	protected SafeSubscriptionTemplate(SUB_T subscriber) {
+	protected SafeSubscriptionTemplate(Object subscriber) {
 		this.weakSubscriber = new WeakReference<>(subscriber);
 	}
 	
 	public <PUB_T, OBS_T> void addSafely(PUB_T publisher, OBS_T observer, 
 			BiConsumer<PUB_T, OBS_T> registerer, BiFunction<PUB_T, OBS_T, Runnable> unregistererFactory) {
 
-		observer = ProxyWithWeakReferences.create(observer, weakSubscriber.get());
+		observer = WeakRefsInvocationHandler.create(observer, weakSubscriber.get());
 		registerer.accept(publisher, observer);
 		Runnable unregistererAsync = unregistererFactory.apply(publisher, observer);
 		finalizables.add(WeakReferenceFinalizable.createFinalizer(weakSubscriber.get(), unregistererAsync));
